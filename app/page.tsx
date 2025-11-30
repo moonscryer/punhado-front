@@ -63,9 +63,9 @@ export default function Home() {
     <div className="container mx-auto px-4 py-8">
       {/* Header + Search */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Jogos</h1>
+        <h1 className="text-4xl font-bold mb-4">Jogos</h1>
         <p className="text-muted-foreground mb-6">
-          Navegue pela nossa coleção de jogos de RPG
+          Confira as campanhas passadas e atuais do Punhado de Dados.
         </p>
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
