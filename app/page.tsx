@@ -6,6 +6,7 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import type { Game } from "@/types/game";
+import Pagination from "@/components/Pagination";
 
 const GAMES_PER_PAGE = 9;
 
@@ -32,7 +33,6 @@ export default function Home() {
     fetchGames();
   }, []);
 
-  // Filter games by search query
   useEffect(() => {
     const filtered = games.filter(
       (game) =>
@@ -120,30 +120,11 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-4 mt-8">
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                disabled={currentPage === 1}
-                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded disabled:opacity-50"
-              >
-                Anterior
-              </button>
-              <span>
-                {currentPage} / {totalPages}
-              </span>
-              <button
-                onClick={() =>
-                  setCurrentPage((p) => Math.min(p + 1, totalPages))
-                }
-                disabled={currentPage === totalPages}
-                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded disabled:opacity-50"
-              >
-                Próxima
-              </button>
-            </div>
-          )}
+          <Pagination
+            totalPages={totalPages}
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+          />
         </>
       )}
     </div>
