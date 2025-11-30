@@ -140,7 +140,7 @@ export default function Home() {
                 disabled={currentPage === totalPages}
                 className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded disabled:opacity-50"
               >
-                Próximo
+                Próxima
               </button>
             </div>
           )}
