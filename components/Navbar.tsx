@@ -31,7 +31,7 @@ export default function Navbar() {
 
   const navLinks = (
     <Link
-      href="/personagens"
+      href="/characters"
       className="text-foreground font-bold transition-colors hover:text-purple-500"
       onClick={() => setIsOpen(false)}
     >
