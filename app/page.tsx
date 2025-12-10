@@ -7,8 +7,17 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import type { Game } from "@/types/game";
 import Pagination from "@/components/Pagination";
+import slugify from "slugify"; // <-- NEW
 
 const GAMES_PER_PAGE = 9;
+
+// Standard slug helper for consistency everywhere
+const toSlug = (text: string) =>
+  slugify(text, {
+    lower: true,
+    strict: true,
+    trim: true,
+  });
 
 export default function Home() {
   const [games, setGames] = useState<Game[]>([]);
@@ -90,7 +99,10 @@ export default function Home() {
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {paginatedGames.map((game) => (
-              <Link key={game.id} href={`/games/${game.id}`}>
+              <Link
+                key={game.id}
+                href={`/games/${toSlug(game.name)}`} // <-- UPDATED
+              >
                 <div className="h-full hover:shadow-lg transition-shadow cursor-pointer overflow-hidden flex flex-col rounded-lg border bg-background">
                   {/* Image flush to top */}
                   {game.image_url && (

@@ -8,13 +8,22 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Character } from "@/types/character";
 import type { Game } from "@/types/game";
+import slugify from "slugify";
 
 export const dynamic = "force-dynamic";
 export const dynamicParams = true;
 
+const toSlug = (text: string) =>
+  slugify(text, {
+    lower: true,
+    strict: true,
+    trim: true,
+  });
+
 export default function CharacterDetailPage() {
   const params = useParams();
-  const characterId = params.id as string;
+  const slugParam = params.slug as string;
+
   const [character, setCharacter] = useState<Character | null>(null);
   const [game, setGame] = useState<Game | null>(null);
   const [loading, setLoading] = useState(true);
@@ -31,8 +40,9 @@ export default function CharacterDetailPage() {
         const gamesData = await gamesResponse.json();
 
         const foundCharacter = charactersData.find(
-          (c: Character) => c.id === parseInt(characterId)
+          (c: Character) => toSlug(c.name) === slugParam
         );
+
         setCharacter(foundCharacter || null);
 
         if (foundCharacter) {
@@ -49,7 +59,7 @@ export default function CharacterDetailPage() {
     }
 
     fetchData();
-  }, [characterId]);
+  }, [slugParam]);
 
   if (loading) {
     return (

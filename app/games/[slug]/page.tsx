@@ -8,13 +8,22 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Game } from "@/types/game";
 import type { Character } from "@/types/character";
+import slugify from "slugify";
 
 export const dynamic = "force-dynamic";
 export const dynamicParams = true;
 
+const toSlug = (text: string) =>
+  slugify(text, {
+    lower: true,
+    strict: true,
+    trim: true,
+  });
+
 export default function GameDetailPage() {
   const params = useParams();
-  const gameId = params.id as string;
+  const slugParam = params.slug as string;
+
   const [game, setGame] = useState<Game | null>(null);
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,14 +40,16 @@ export default function GameDetailPage() {
         const charactersData = await charactersResponse.json();
 
         const foundGame = gamesData.find(
-          (g: Game) => g.id === parseInt(gameId)
+          (g: Game) => toSlug(g.name) === slugParam
         );
         setGame(foundGame || null);
 
-        const gameCharacters = charactersData.filter(
-          (c: Character) => c.game_id === parseInt(gameId)
-        );
-        setCharacters(gameCharacters);
+        if (foundGame) {
+          const gameCharacters = charactersData.filter(
+            (c: Character) => c.game_id === foundGame.id
+          );
+          setCharacters(gameCharacters);
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -47,7 +58,7 @@ export default function GameDetailPage() {
     }
 
     fetchData();
-  }, [gameId]);
+  }, [slugParam]);
 
   if (loading) {
     return (
@@ -89,7 +100,6 @@ export default function GameDetailPage() {
       {/* Game Card */}
       <div className="flex flex-col gap-6">
         <div className="flex flex-col md:flex-row gap-6">
-          {/* Image flush to top */}
           {game.image_url && (
             <div className="w-full md:w-1/2 rounded-lg overflow-hidden">
               <img
@@ -121,9 +131,11 @@ export default function GameDetailPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {characters.map((character) => (
-                <Link key={character.id} href={`/characters/${character.id}`}>
+                <Link
+                  key={character.id}
+                  href={`/characters/${toSlug(character.name)}`} // <-- UPDATED
+                >
                   <div className="h-full hover:shadow-lg transition-shadow cursor-pointer overflow-hidden flex flex-col rounded-lg border bg-background">
-                    {/* Character image flush to top */}
                     {character.image && (
                       <div className="w-full h-48">
                         <img
