@@ -1,7 +1,4 @@
-"use client";
-
-import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,8 +7,10 @@ import type { Character } from "@/types/character";
 import type { Game } from "@/types/game";
 import slugify from "slugify";
 
-export const dynamic = "force-dynamic";
 export const dynamicParams = true;
+
+const CHARACTERS_API = "https://punhadodedados.com/api/characters";
+const GAMES_API = "https://punhadodedados.com/api/games";
 
 const toSlug = (text: string) =>
   slugify(text, {
@@ -20,75 +19,64 @@ const toSlug = (text: string) =>
     trim: true,
   });
 
-export default function CharacterDetailPage() {
-  const params = useParams();
-  const slugParam = params.slug as string;
+// ============================================================
+// 1️⃣ Generate static slug params at build time
+// ============================================================
+export async function generateStaticParams() {
+  const res = await fetch(CHARACTERS_API, { cache: "no-store" });
 
-  const [character, setCharacter] = useState<Character | null>(null);
-  const [game, setGame] = useState<Game | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const [charactersResponse, gamesResponse] = await Promise.all([
-          fetch("https://punhadodedados.com/api/characters"),
-          fetch("https://punhadodedados.com/api/games"),
-        ]);
-
-        const charactersData = await charactersResponse.json();
-        const gamesData = await gamesResponse.json();
-
-        const foundCharacter = charactersData.find(
-          (c: Character) => toSlug(c.name) === slugParam
-        );
-
-        setCharacter(foundCharacter || null);
-
-        if (foundCharacter) {
-          const foundGame = gamesData.find(
-            (g: Game) => g.id === foundCharacter.game_id
-          );
-          setGame(foundGame || null);
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, [slugParam]);
-
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <p className="text-muted-foreground">
-            Carregando detalhes do personagem...
-          </p>
-        </div>
-      </div>
-    );
+  if (!res.ok) {
+    throw new Error("Failed to fetch characters for static params");
   }
+
+  const characters: Character[] = await res.json();
+
+  return characters.map((c) => ({
+    slug: toSlug(c.name),
+  }));
+}
+
+// Revalidate every hour for ISR
+export const revalidate = 3600;
+
+// ============================================================
+// 2️⃣ Server-rendered detail page
+// ============================================================
+export default async function CharacterDetailPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug: slugParam } = await params; // <-- FIX: unwrap params
+
+  // Fetch both datasets on server
+  const [charactersRes, gamesRes] = await Promise.all([
+    fetch(CHARACTERS_API, { cache: "force-cache" }),
+    fetch(GAMES_API, { cache: "force-cache" }),
+  ]);
+
+  if (!charactersRes.ok || !gamesRes.ok) {
+    throw new Error("Failed to fetch character or game data");
+  }
+
+  const [characters, games]: [Character[], Game[]] = await Promise.all([
+    charactersRes.json(),
+    gamesRes.json(),
+  ]);
+
+  // Find character
+  const character = characters.find((c) => toSlug(c.name) === slugParam);
 
   if (!character) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-          <p className="text-muted-foreground">Personagem não encontrado</p>
-          <Button asChild>
-            <Link href="/characters">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Voltar
-            </Link>
-          </Button>
-        </div>
-      </div>
-    );
+    return notFound();
   }
 
+  // Find associated game
+  const game = games.find((g) => g.id === character.game_id) || null;
+
+  // ============================================================
+  // UI
+  // ============================================================
   return (
     <div className="container mx-auto px-4 py-8">
       <Button variant="ghost" asChild className="mb-6">
@@ -121,7 +109,7 @@ export default function CharacterDetailPage() {
                 <div>
                   <span className="font-semibold">Jogo:</span>{" "}
                   <Link
-                    href={`/games/${game.id}`}
+                    href={`/games/${toSlug(game.name)}`}
                     className="hover:underline text-foreground"
                   >
                     {game.name}
