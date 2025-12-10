@@ -8,8 +8,16 @@ import { Badge } from "@/components/ui/badge";
 import Pagination from "@/components/Pagination";
 import type { Character } from "@/types/character";
 import type { Game } from "@/types/game";
+import slugify from "slugify";
 
 const CHARACTERS_PER_PAGE = 9;
+
+const toSlug = (text: string) =>
+  slugify(text, {
+    lower: true,
+    strict: true,
+    trim: true,
+  });
 
 export default function CharactersPage() {
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -108,7 +116,10 @@ export default function CharactersPage() {
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {paginatedCharacters.map((character) => (
-              <Link key={character.id} href={`/characters/${character.id}`}>
+              <Link
+                key={character.id}
+                href={`/characters/${toSlug(character.name)}`} // <-- UPDATED
+              >
                 <div className="h-full hover:shadow-lg transition-shadow cursor-pointer overflow-hidden flex flex-col rounded-lg border bg-background">
                   {character.image && (
                     <div className="w-full h-48">
